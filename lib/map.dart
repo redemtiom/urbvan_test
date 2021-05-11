@@ -5,7 +5,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-
 class Map extends StatefulWidget {
   final double lat;
   final double lng;
@@ -18,58 +17,73 @@ class Map extends StatefulWidget {
 
 class _MapState extends State<Map> {
   String _mapStyle;
-  Completer<GoogleMapController> _controller = Completer();
+  LatLng _kMapCenter = LatLng(52.4478, -3.5402);
+  GoogleMapController controller;
+  BitmapDescriptor _markerIcon;
+  //Marker issMarker;
+  Set<Marker> _markers = {};
 
   @override
   void initState() {
-    super.initState();
-
     rootBundle.loadString('assets/map_style.txt').then((string) {
       _mapStyle = string;
     });
-  }
-  /*static final CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(19.430751, -99.133064),
-    zoom: 14.4746,
-  );*/
 
-  /*static final CameraPosition _kLake = CameraPosition(
-      bearing: 192.8334901395799,
-      target: LatLng(37.43296265331129, -122.08832357078792),
-      tilt: 59.440717697143555,
-      zoom: 19.151926040649414);*/
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(devicePixelRatio: 2.5),
+            'assets/icons/satellit128.png')
+        .then((value) => _markerIcon = value);
+
+    super.initState();
+  }
+
+  updateCounter() {
+    Timer.periodic(Duration(seconds: 10), (timer) {
+      getIssPosition();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return GoogleMap(
       mapType: MapType.normal,
       zoomControlsEnabled: false,
-      initialCameraPosition:
-          CameraPosition(target: LatLng(widget.lat, widget.lng), zoom: 14.4746),
-      onMapCreated: (GoogleMapController controller) {
-        controller.setMapStyle(_mapStyle);
-        _controller.complete(controller);
-      },
+      initialCameraPosition: CameraPosition(target: _kMapCenter, zoom: 14.4746),
+      markers: _markers,
+      onMapCreated: _onMapCreated,
     );
-    /*floatingActionButton: FloatingActionButton.extended(
-        onPressed: _goToTheLake,
-        label: Text('To the lake!'),
-        icon: Icon(Icons.directions_boat),
-      ),*/
   }
 
   Future<void> getIssPosition() async {
     final response =
-      await http.get(Uri.http('api.open-notify.org', '/iss-now.json'));
-    if(response.statusCode == 200){
-      print(jsonDecode(response.body));
-    }else{
+        await http.get(Uri.http('api.open-notify.org', '/iss-now.json'));
+    if (response.statusCode == 200) {
+      var body = jsonDecode(response.body);
+      double issLat = double.parse(body['iss_position']['latitude']);
+      double issLng = double.parse(body['iss_position']['longitude']);
+
+      setState(() {
+        _markers.add(Marker(
+          markerId: MarkerId("<MARKER_ID>"),
+          position: LatLng(issLat, issLng),
+          icon: _markerIcon,
+        ));
+        controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+            //bearing: 192.8334901395799,
+            target: LatLng(issLat, issLng),
+            //tilt: 59.440717697143555,
+            zoom: 2.0)));
+      });
+    } else {
       print('error oh no no no $response');
     }
   }
 
-  /*Future<void> _goToTheLake() async {
-    final GoogleMapController controller = await _controller.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
-  }*/
+  void _onMapCreated(GoogleMapController controllerParam) {
+    setState(() {
+      controller = controllerParam;
+      controller.setMapStyle(_mapStyle);
+    });
+    //getIssPosition();
+    updateCounter();
+  }
 }
