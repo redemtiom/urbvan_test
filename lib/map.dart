@@ -48,7 +48,6 @@ class _MapGState extends State<MapG> {
 
   @override
   Widget build(BuildContext context) {
-    getGDirection();
     return GoogleMap(
       myLocationEnabled: true,
       mapType: MapType.normal,
@@ -57,12 +56,15 @@ class _MapGState extends State<MapG> {
       markers: _markers,
       onMapCreated: _onMapCreated,
       polylines: Set<Polyline>.of(polylines.values),
-      onLongPress: (LatLng pos) => {
-        setState(() {
-          _markers.add(_createMarker(pos, conta++));
-        })
-      },
+      onLongPress: _onLongPress,
     );
+  }
+
+  void _onLongPress(LatLng pos) {
+    setState(() {
+      _markers.add(_createMarker(pos, conta++));
+    });
+    getGDirection();
   }
 
   Future<void> getIssPosition() async {
@@ -91,18 +93,19 @@ class _MapGState extends State<MapG> {
   }
 
   Marker _createMarker(LatLng pos, int mID) {
-    if (_markerIcon != null) {
+    //if (_markerIcon != null) {
+
+    return Marker(
+      markerId: MarkerId("marker_$mID"),
+      position: pos,
+      //icon: _markerIcon,
+    );
+    /*} else {
       return Marker(
         markerId: MarkerId("marker_$mID"),
         position: pos,
-        icon: _markerIcon,
       );
-    } else {
-      return Marker(
-        markerId: MarkerId("marker_$mID"),
-        position: pos,
-      );
-    }
+    }*/
   }
 
   void _onMapCreated(GoogleMapController controllerParam) {
@@ -114,17 +117,99 @@ class _MapGState extends State<MapG> {
   }
 
   Future<void> getGDirection() async {
-    final response = await http.get(
-        Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
-      'origin': '17.303309, -96.915310',
-      'destination': '17.300645, -96.911158',
-      'key': 'ENTER_YOUR_API_KEY_HERE'
-    }));
+    if (_markers.length > 1) {
+      var parseOrigin = jsonDecode(jsonEncode(_markers.elementAt(0)));
+      var parseDestiny = jsonDecode(jsonEncode(_markers.elementAt(_markers.length-1)));
+      var origin = "${parseOrigin['position'][0]},${parseOrigin['position'][1]}";
+      var desitny = "${parseDestiny['position'][0]},${parseDestiny['position'][1]}";
+      
+      final response = await http
+          .get(Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
+        'origin': origin,
+        'destination': desitny,
+        'key': 'ENTER_YOUR_API_KEY_HERE'
+      }));
 
-    if (response.statusCode == 200) {
-      var body = jsonDecode(response.body);
-
-      print('my body: $body');
+      if (response.statusCode == 200) {
+        var body = jsonDecode(response.body);
+        var ppp = body['routes'][0]['overview_polyline']['points'];
+        _add(ppp);
+        print('my body: $ppp');
+      } else {
+        print('myresponse: $response');
+      }
     }
+  }
+
+  void _add(String encodePoly) {
+    final int polylineCount = polylines.length;
+
+    if (polylineCount == 12) {
+      return;
+    }
+
+    final String polylineIdVal = 'polyline_id_$_polylineIdCounter';
+    _polylineIdCounter++;
+    final PolylineId polylineId = PolylineId(polylineIdVal);
+
+    final Polyline polyline = Polyline(
+      polylineId: polylineId,
+      consumeTapEvents: true,
+      color: Colors.orange,
+      width: 5,
+      points: decodeEncodedPolyline(encodePoly),
+      /*onTap: () {
+        _onPolylineTapped(polylineId);
+      },*/
+    );
+
+    setState(() {
+      polylines[polylineId] = polyline;
+    });
+  }
+
+  List<LatLng> decodeEncodedPolyline(String encoded) {
+    List<LatLng> poly = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+    BigInt Big0 = BigInt.from(0);
+    BigInt Big0x1f = BigInt.from(0x1f);
+    BigInt Big0x20 = BigInt.from(0x20);
+
+    while (index < len) {
+      int shift = 0;
+      BigInt b, result;
+      result = Big0;
+      do {
+        b = BigInt.from(encoded.codeUnitAt(index++) - 63);
+        result |= (b & Big0x1f) << shift;
+        shift += 5;
+      } while (b >= Big0x20);
+      BigInt rshifted = result >> 1;
+      int dlat;
+      if (result.isOdd)
+        dlat = (~rshifted).toInt();
+      else
+        dlat = rshifted.toInt();
+      lat += dlat;
+
+      shift = 0;
+      result = Big0;
+      do {
+        b = BigInt.from(encoded.codeUnitAt(index++) - 63);
+        result |= (b & Big0x1f) << shift;
+        shift += 5;
+      } while (b >= Big0x20);
+      rshifted = result >> 1;
+      int dlng;
+      if (result.isOdd)
+        dlng = (~rshifted).toInt();
+      else
+        dlng = rshifted.toInt();
+      lng += dlng;
+
+      poly.add(LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble()));
+    }
+    return poly;
   }
 }
