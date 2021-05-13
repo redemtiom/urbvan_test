@@ -5,22 +5,26 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-class Map extends StatefulWidget {
+class MapG extends StatefulWidget {
   final double lat;
   final double lng;
 
   @override
-  _MapState createState() => _MapState();
+  _MapGState createState() => _MapGState();
 
-  Map({Key key, this.lat, this.lng}) : super(key: key);
+  MapG({Key key, this.lat, this.lng}) : super(key: key);
 }
 
-class _MapState extends State<Map> {
+class _MapGState extends State<MapG> {
   String _mapStyle;
   LatLng _kMapCenter = LatLng(52.4478, -3.5402);
+  //LatLng _lastLongPress;
+  Map<PolylineId, Polyline> polylines = <PolylineId, Polyline>{};
+  int _polylineIdCounter = 0;
+  PolylineId selectedPolyline;
+  int conta = 0;
   GoogleMapController controller;
   BitmapDescriptor _markerIcon;
-  //Marker issMarker;
   Set<Marker> _markers = {};
 
   @override
@@ -29,9 +33,9 @@ class _MapState extends State<Map> {
       _mapStyle = string;
     });
 
-    BitmapDescriptor.fromAssetImage(ImageConfiguration(devicePixelRatio: 2.5),
+    /*BitmapDescriptor.fromAssetImage(ImageConfiguration(devicePixelRatio: 2.5),
             'assets/icons/satellit128.png')
-        .then((value) => _markerIcon = value);
+        .then((value) => _markerIcon = value);*/
 
     super.initState();
   }
@@ -44,12 +48,20 @@ class _MapState extends State<Map> {
 
   @override
   Widget build(BuildContext context) {
+    getGDirection();
     return GoogleMap(
+      myLocationEnabled: true,
       mapType: MapType.normal,
       zoomControlsEnabled: false,
       initialCameraPosition: CameraPosition(target: _kMapCenter, zoom: 14.4746),
       markers: _markers,
       onMapCreated: _onMapCreated,
+      polylines: Set<Polyline>.of(polylines.values),
+      onLongPress: (LatLng pos) => {
+        setState(() {
+          _markers.add(_createMarker(pos, conta++));
+        })
+      },
     );
   }
 
@@ -78,12 +90,41 @@ class _MapState extends State<Map> {
     }
   }
 
+  Marker _createMarker(LatLng pos, int mID) {
+    if (_markerIcon != null) {
+      return Marker(
+        markerId: MarkerId("marker_$mID"),
+        position: pos,
+        icon: _markerIcon,
+      );
+    } else {
+      return Marker(
+        markerId: MarkerId("marker_$mID"),
+        position: pos,
+      );
+    }
+  }
+
   void _onMapCreated(GoogleMapController controllerParam) {
     setState(() {
       controller = controllerParam;
       controller.setMapStyle(_mapStyle);
     });
-    //getIssPosition();
-    updateCounter();
+    //updateCounter();
+  }
+
+  Future<void> getGDirection() async {
+    final response = await http.get(
+        Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
+      'origin': '17.303309, -96.915310',
+      'destination': '17.300645, -96.911158',
+      'key': 'ENTER_YOUR_API_KEY_HERE'
+    }));
+
+    if (response.statusCode == 200) {
+      var body = jsonDecode(response.body);
+
+      print('my body: $body');
+    }
   }
 }

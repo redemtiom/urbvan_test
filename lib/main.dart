@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         body: Stack(
           children: [
-            Map(lat: 19.430751, lng: -99.133064),
+            MapG(lat: 19.430751, lng: -99.133064),
             SafeArea(
               child: Container(
                 margin: EdgeInsets.only(bottom: 20.0),
