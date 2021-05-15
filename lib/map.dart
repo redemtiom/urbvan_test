@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:urbvan_test/viewmodels/google_map_vm.dart';
+import 'package:provider/provider.dart';
 
 class MapG extends StatefulWidget {
   final double lat;
@@ -17,7 +19,7 @@ class MapG extends StatefulWidget {
 
 class _MapGState extends State<MapG> {
   String _mapStyle;
-  LatLng _kMapCenter = LatLng(52.4478, -3.5402);
+  LatLng _kMapCenter = LatLng(19.433918, -99.1381993);
   //LatLng _lastLongPress;
   Map<PolylineId, Polyline> polylines = <PolylineId, Polyline>{};
   int _polylineIdCounter = 0;
@@ -26,13 +28,13 @@ class _MapGState extends State<MapG> {
   GoogleMapController controller;
   BitmapDescriptor _markerIcon;
   Set<Marker> _markers = {};
+  //Set<Polyline> _customP = {};
 
   @override
   void initState() {
     rootBundle.loadString('assets/map_style.txt').then((string) {
       _mapStyle = string;
     });
-
     /*BitmapDescriptor.fromAssetImage(ImageConfiguration(devicePixelRatio: 2.5),
             'assets/icons/satellit128.png')
         .then((value) => _markerIcon = value);*/
@@ -48,15 +50,18 @@ class _MapGState extends State<MapG> {
 
   @override
   Widget build(BuildContext context) {
-    return GoogleMap(
-      myLocationEnabled: true,
-      mapType: MapType.normal,
-      zoomControlsEnabled: false,
-      initialCameraPosition: CameraPosition(target: _kMapCenter, zoom: 14.4746),
-      markers: _markers,
-      onMapCreated: _onMapCreated,
-      polylines: Set<Polyline>.of(polylines.values),
-      onLongPress: _onLongPress,
+    return Consumer<GoogleMapModel>(
+      builder: (context, googleM, child) => GoogleMap(
+        myLocationEnabled: true,
+        mapType: MapType.normal,
+        zoomControlsEnabled: false,
+        initialCameraPosition:
+            CameraPosition(target: _kMapCenter, zoom: 14.4746),
+        markers: googleM.markers,
+        onMapCreated: _onMapCreated,
+        polylines: Set<Polyline>.of(polylines.values),
+        onLongPress: _onLongPress,
+      ),
     );
   }
 
@@ -119,10 +124,13 @@ class _MapGState extends State<MapG> {
   Future<void> getGDirection() async {
     if (_markers.length > 1) {
       var parseOrigin = jsonDecode(jsonEncode(_markers.elementAt(0)));
-      var parseDestiny = jsonDecode(jsonEncode(_markers.elementAt(_markers.length-1)));
-      var origin = "${parseOrigin['position'][0]},${parseOrigin['position'][1]}";
-      var desitny = "${parseDestiny['position'][0]},${parseDestiny['position'][1]}";
-      
+      var parseDestiny =
+          jsonDecode(jsonEncode(_markers.elementAt(_markers.length - 1)));
+      var origin =
+          "${parseOrigin['position'][0]},${parseOrigin['position'][1]}";
+      var desitny =
+          "${parseDestiny['position'][0]},${parseDestiny['position'][1]}";
+
       final response = await http
           .get(Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
         'origin': origin,

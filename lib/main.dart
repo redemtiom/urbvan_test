@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:urbvan_test/map.dart';
+import 'package:urbvan_test/viewmodels/google_map_vm.dart';
+import 'package:provider/provider.dart';
+//import 'package:urbvan_test/viewmodels/google_map_vm.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => GoogleMapModel(),
+        ),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -26,7 +38,9 @@ class MyApp extends StatelessWidget {
                   children: [
                     ElevatedButton(
                         onPressed: () => {}, child: Icon(Icons.alt_route)),
-                    SizedBox(width: 10.0,),
+                    SizedBox(
+                      width: 10.0,
+                    ),
                     ElevatedButton(
                         onPressed: () => {}, child: Icon(Icons.satellite))
                   ],
