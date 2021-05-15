@@ -21,7 +21,7 @@ class Service {
         .get(Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
       'origin': origin,
       'destination': destination,
-      'key': 'AIzaSyBwaX5FpOCf5tcLPLt-JFSfuJ_rrtSA-Zg'
+      'key': 'ENTER_YOUR_API_KEY_HERE'
     }));
     if (response.statusCode == 200) {
       var body = jsonDecode(response.body);
