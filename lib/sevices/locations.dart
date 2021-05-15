@@ -4,6 +4,7 @@ import 'package:urbvan_test/global_environments.dart';
 import 'package:http/http.dart' as http;
 
 class Service {
+  // get the ISS position http://open-notify.org/Open-Notify-API/
   Future fetchIssPosition() async {
     final response =
         await http.get(Uri.http('api.open-notify.org', '/iss-now.json'));
@@ -15,6 +16,7 @@ class Service {
     }
   }
 
+  // get a google's route
   Future fetchGoogleDirection(String origin, String destination) async {
     final response = await http
         .get(Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
