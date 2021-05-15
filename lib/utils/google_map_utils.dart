@@ -1,5 +1,8 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+// This function was taken from: https://gist.github.com/BoHellgren/aa2438f837bc675061cbb156ba83ea35 to decode Polylines
+// Google documentation https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+
 List<LatLng> decodeEncodedPolyline(String encoded) {
   List<LatLng> poly = [];
   int index = 0, len = encoded.length;

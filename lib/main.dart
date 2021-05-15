@@ -29,14 +29,13 @@ class MyApp extends StatelessWidget {
       ),
       home: Scaffold(
         body: Stack(
-          //alignment: AlignmentDirectional.bottomCenter,
           children: [
             MapG(),
             SafeArea(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Expanded(child:Container(
+                  option == 'direction' ? Expanded(child:Container(
                     alignment: AlignmentDirectional.centerStart,
                     margin: EdgeInsets.only(left: 10.0),
                     child: Column(
@@ -46,7 +45,7 @@ class MyApp extends StatelessWidget {
                       SizedBox(),
                       Container(child: ElevatedButton(onPressed: () => {context.read<GoogleMapModel>().removeMarkers()}, child: Icon(Icons.location_off_outlined),),),
                     ],),
-                  ),),
+                  ),) : Container(),
                   Container(
                     margin: EdgeInsets.only(bottom: 20.0),
                     child: Row(
