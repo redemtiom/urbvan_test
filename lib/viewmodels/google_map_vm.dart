@@ -5,7 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:urbvan_test/utils/google_map_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:urbvan_test/sevices/locations.dart';
-//import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 
 class GoogleMapModel extends ChangeNotifier {
   Set<Marker> _markers = {};
@@ -13,11 +13,10 @@ class GoogleMapModel extends ChangeNotifier {
   final _mapCenter = LatLng(19.433918, -99.1381993);
   int _polylineIdCounter = 0;
   int _markerIdCounter = 0;
-  //late String _mapStyle = rootBundle.loadString('assets/map_style.txt');
   GoogleMapController _controller;
   Timer _timer;
   String _option = "direction";
-  //BitmapDescriptor _markerIcon;
+  BitmapDescriptor _markerIcon;
 
   LatLng get initialCameraPosition => _mapCenter;
 
@@ -25,6 +24,10 @@ class GoogleMapModel extends ChangeNotifier {
 
   set controller(GoogleMapController controllerReady) {
     _controller = controllerReady;
+    rootBundle.loadString('assets/map_style.txt').then((value) => _controller.setMapStyle(value));
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(devicePixelRatio: 2.5),
+            'assets/icons/satellit128.png')
+        .then((value) => _markerIcon = value);
 
     notifyListeners();
   }
@@ -78,7 +81,7 @@ class GoogleMapModel extends ChangeNotifier {
     _markers.add(Marker(
       markerId: MarkerId("<MARKER_ID>"),
       position: LatLng(issLat, issLng),
-      //icon: _markerIcon,
+      icon: _markerIcon,
     ));
     _controller.animateCamera(
       CameraUpdate.newCameraPosition(
